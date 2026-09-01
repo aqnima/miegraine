@@ -56,4 +56,26 @@ function copyHtmlFiles(srcDir, targetDir) {
 }
 
 copyHtmlFiles(path.join(nextDir, 'server', 'app'), distDir);
+
+// 5. Ensure fallback index.html in every route directory for SPA client routing
+const rootHtmlPath = path.join(distDir, 'index.html');
+if (fs.existsSync(rootHtmlPath)) {
+  const rootHtml = fs.readFileSync(rootHtmlPath, 'utf8');
+  function ensureIndexHtml(dir) {
+    if (!fs.existsSync(dir)) return;
+    const items = fs.readdirSync(dir, { withFileTypes: true });
+    const hasHtml = items.some((it) => it.isFile() && it.name === 'index.html');
+    if (!hasHtml) {
+      fs.writeFileSync(path.join(dir, 'index.html'), rootHtml);
+    }
+    for (const item of items) {
+      if (item.isDirectory() && !item.name.startsWith('_') && item.name !== 'icons') {
+        ensureIndexHtml(path.join(dir, item.name));
+      }
+    }
+  }
+  ensureIndexHtml(path.join(distDir, 'dashboard'));
+  ensureIndexHtml(path.join(distDir, 'superadmin'));
+}
+
 console.log('✅ Cloudflare Pages dist package prepared successfully at dist/');
