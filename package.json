@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
-    "build": "opennextjs-cloudflare build",
+    "build": "next-on-pages",
     "build:next": "next build",
-    "deploy": "opennextjs-cloudflare deploy",
+    "pages:build": "next-on-pages",
     "start": "next start",
     "lint": "next lint",
     "db:generate": "drizzle-kit generate",

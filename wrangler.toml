@@ -1,8 +1,7 @@
 name = "miegraine"
-main = ".open-next/worker.js"
 compatibility_date = "2026-08-29"
 compatibility_flags = ["nodejs_compat"]
-assets = { directory = ".open-next/assets", binding = "ASSETS" }
+pages_build_output_dir = ".vercel/output/static"
 
 # Cloudflare D1 Serverless SQLite Database Binding
 [[d1_databases]]
