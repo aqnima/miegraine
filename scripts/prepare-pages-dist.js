@@ -25,37 +25,62 @@ if (fs.existsSync(nextStatic)) {
   fs.cpSync(nextStatic, distNextStatic, { recursive: true });
 }
 
-// 4. Recursive copy HTML files from .next/server/app
-function copyHtmlFiles(srcDir, targetDir) {
+// 4. Copy all compiled files (.html, .rsc, .segments, etc.) from .next/server/app
+function copyAllServerApp(srcDir, targetDir) {
   if (!fs.existsSync(srcDir)) return;
   const items = fs.readdirSync(srcDir, { withFileTypes: true });
   for (const item of items) {
     const srcPath = path.join(srcDir, item.name);
     if (item.isDirectory()) {
       if (item.name === '(auth)') {
-        copyHtmlFiles(srcPath, targetDir);
-      } else if (!item.name.startsWith('_') && item.name !== 'page' && !item.name.endsWith('.svg') && !item.name.endsWith('.webmanifest')) {
+        copyAllServerApp(srcPath, targetDir);
+      } else if (!item.name.endsWith('.webmanifest') && !item.name.endsWith('.svg')) {
         const subTarget = path.join(targetDir, item.name);
+        if (fs.existsSync(subTarget) && !fs.statSync(subTarget).isDirectory()) {
+          fs.rmSync(subTarget, { force: true });
+        }
         fs.mkdirSync(subTarget, { recursive: true });
-        copyHtmlFiles(srcPath, subTarget);
+        copyAllServerApp(srcPath, subTarget);
       }
-    } else if (item.name.endsWith('.html') && !item.name.startsWith('_global')) {
-      const baseName = item.name.replace('.html', '');
-      if (baseName === 'index') {
-        fs.copyFileSync(srcPath, path.join(targetDir, 'index.html'));
-      } else if (baseName === '_not-found') {
-        fs.copyFileSync(srcPath, path.join(targetDir, '404.html'));
-      } else {
-        const destFolder = path.join(targetDir, baseName);
-        fs.mkdirSync(destFolder, { recursive: true });
-        fs.copyFileSync(srcPath, path.join(destFolder, 'index.html'));
-        fs.copyFileSync(srcPath, path.join(targetDir, item.name));
+    } else {
+      const directTarget = path.join(targetDir, item.name);
+      if (!fs.existsSync(directTarget) || !fs.statSync(directTarget).isDirectory()) {
+        fs.copyFileSync(srcPath, directTarget);
+      }
+
+      // If it's an HTML page (e.g. pos.html), also ensure pos/index.html exists for clean URL routing
+      if (item.name.endsWith('.html') && !item.name.startsWith('_global')) {
+        const baseName = item.name.replace('.html', '');
+        if (baseName === 'index') {
+          fs.copyFileSync(srcPath, path.join(targetDir, 'index.html'));
+        } else if (baseName === '_not-found') {
+          fs.copyFileSync(srcPath, path.join(targetDir, '404.html'));
+        } else {
+          const destFolder = path.join(targetDir, baseName);
+          if (fs.existsSync(destFolder) && !fs.statSync(destFolder).isDirectory()) {
+            fs.rmSync(destFolder, { force: true });
+          }
+          fs.mkdirSync(destFolder, { recursive: true });
+          fs.copyFileSync(srcPath, path.join(destFolder, 'index.html'));
+        }
+      }
+
+      // If it's an RSC payload (e.g. pos.rsc), also copy into pos/page.rsc for client router
+      if (item.name.endsWith('.rsc')) {
+        const baseName = item.name.replace('.rsc', '');
+        if (baseName !== 'index') {
+          const destFolder = path.join(targetDir, baseName);
+          if (fs.existsSync(destFolder) && fs.statSync(destFolder).isDirectory()) {
+            fs.copyFileSync(srcPath, path.join(destFolder, 'page.rsc'));
+            fs.copyFileSync(srcPath, path.join(destFolder, 'index.rsc'));
+          }
+        }
       }
     }
   }
 }
 
-copyHtmlFiles(path.join(nextDir, 'server', 'app'), distDir);
+copyAllServerApp(path.join(nextDir, 'server', 'app'), distDir);
 
 // 5. Ensure fallback index.html for SPA client routing
 const dashboardHtmlPath = path.join(distDir, 'dashboard', 'index.html');
@@ -85,4 +110,4 @@ if (fs.existsSync(superadminHtmlPath)) {
   ensureSectionFallback(path.join(distDir, 'superadmin'), superadminHtml);
 }
 
-console.log('✅ Cloudflare Pages dist package prepared successfully at dist/');
+console.log('✅ Cloudflare Pages dist package with RSC payloads prepared successfully at dist/');

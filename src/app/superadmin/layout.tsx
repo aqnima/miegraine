@@ -29,6 +29,13 @@ export default function SuperadminLayout({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    try {
+      const cached = sessionStorage.getItem('__miegraine_cached_superadmin');
+      if (cached) {
+        setUser(JSON.parse(cached));
+      }
+    } catch {}
+
     fetch('/api/auth/me')
       .then((res) => res.json())
       .then((data) => {
@@ -37,6 +44,9 @@ export default function SuperadminLayout({
             window.location.href = '/dashboard';
           } else {
             setUser(data.user);
+            try {
+              sessionStorage.setItem('__miegraine_cached_superadmin', JSON.stringify(data.user));
+            } catch {}
           }
         }
       })

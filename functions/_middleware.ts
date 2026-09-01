@@ -22,6 +22,7 @@ export async function onRequest(context: any) {
     pathname.endsWith('.json') ||
     pathname.endsWith('.webmanifest') ||
     pathname.endsWith('.css') ||
+    pathname.endsWith('.rsc') ||
     pathname.endsWith('.js')
   ) {
     return next();

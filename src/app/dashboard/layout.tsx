@@ -38,11 +38,21 @@ export default function DashboardLayout({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    try {
+      const cached = sessionStorage.getItem('__miegraine_cached_user');
+      if (cached) {
+        setUser(JSON.parse(cached));
+      }
+    } catch {}
+
     fetch('/api/auth/me')
       .then((res) => res.json())
       .then((data) => {
         if (data.user) {
           setUser(data.user);
+          try {
+            sessionStorage.setItem('__miegraine_cached_user', JSON.stringify(data.user));
+          } catch {}
         }
       })
       .catch(() => {})
