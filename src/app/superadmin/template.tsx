@@ -5,5 +5,5 @@ export default function SuperadminTemplate({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="min-h-full">{children}</div>;
+  return <div className="animate-page-smooth min-h-full">{children}</div>;
 }

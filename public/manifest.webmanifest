@@ -1,21 +1,33 @@
 {
+  "id": "com.miegraine.pos",
   "name": "Miegraine: Platform Kasir Pintar & Ritel Modern",
   "short_name": "Miegraine",
-  "description": "Aplikasi kasir berkecepatan tinggi dengan manajemen multi-satuan bertingkat dan buku piutang digital.",
+  "description": "Aplikasi kasir berkecepatan tinggi dengan manajemen multi-satuan bertingkat, buku piutang digital, dan laporan laba rugi otomatis.",
   "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#F2F4F6",
   "theme_color": "#3182F6",
+  "categories": ["business", "finance", "productivity", "utilities"],
   "icons": [
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/icons/crown-logo.png",
       "sizes": "256x256",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
