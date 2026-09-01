@@ -4,9 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
-    "build": "next-on-pages",
-    "build:next": "next build",
-    "pages:build": "next-on-pages",
+    "build": "next build && node scripts/prepare-pages-dist.js",
     "start": "next start",
     "lint": "next lint",
     "db:generate": "drizzle-kit generate",
