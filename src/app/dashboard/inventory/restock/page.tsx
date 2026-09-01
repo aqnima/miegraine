@@ -1,26 +1,35 @@
+'use client';
+
 import React from 'react';
-import { getPurchaseOrdersAction, getSuppliersAction } from '@/lib/actions/inventory';
+import { useQuery } from '@tanstack/react-query';
+import {
+  getPurchaseOrdersAction,
+  getSuppliersAction,
+} from '@/lib/actions/inventory';
 import { getProductsAction } from '@/lib/actions/products';
-import { getSessionUser } from '@/lib/auth/session';
-import { formatRupiah, formatTanggal } from '@/lib/utils';
 import { RestockClientView } from './restock-client-view';
-import { Truck, ArrowLeft, Plus, CheckCircle2, Clock } from 'lucide-react';
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
 
-export default async function RestockPage() {
-  const user = await getSessionUser();
-  if (!user) redirect('/login');
+export default function RestockPage() {
+  const { data: purchaseOrders = [] } = useQuery({
+    queryKey: ['inventory', 'purchaseOrders'],
+    queryFn: () => getPurchaseOrdersAction(),
+    staleTime: 60 * 1000,
+  });
 
-  const [purchaseOrders, suppliers, products] = await Promise.all([
-    getPurchaseOrdersAction(),
-    getSuppliersAction(),
-    getProductsAction(),
-  ]);
+  const { data: suppliers = [] } = useQuery({
+    queryKey: ['inventory', 'suppliers'],
+    queryFn: () => getSuppliersAction(),
+    staleTime: 60 * 1000,
+  });
+
+  const { data: products = [] } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => getProductsAction(),
+    staleTime: 60 * 1000,
+  });
 
   return (
     <div className="space-y-4 max-w-6xl mx-auto">
-      {/* Restock Interactive Client View */}
       <RestockClientView
         initialOrders={purchaseOrders}
         suppliers={suppliers}

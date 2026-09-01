@@ -1,48 +1,47 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { getProductsAction, getCategoriesAction } from '@/lib/actions/products';
 import { getActiveCashShiftAction } from '@/lib/actions/reports';
 import { PosClient } from './pos-client';
 
 export default function PosPage() {
-  const [products, setProducts] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [activeShift, setActiveShift] = useState<any>(null);
-  const [user, setUser] = useState<any>({
-    tenantName: 'Toko Mie Graine',
-    name: 'Kasir',
-    businessType: 'fnb',
+  const { data: user } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: async () => {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      return data.user;
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.user) setUser(data.user);
-      })
-      .catch(() => {});
+  const { data: products = [] } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => getProductsAction(),
+    staleTime: 60 * 1000,
+  });
 
-    Promise.all([
-      getProductsAction(),
-      getCategoriesAction(),
-      getActiveCashShiftAction(),
-    ])
-      .then(([p, c, s]) => {
-        if (p) setProducts(p);
-        if (c) setCategories(c);
-        if (s) setActiveShift(s);
-      })
-      .catch(() => {});
-  }, []);
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => getCategoriesAction(),
+    staleTime: 60 * 1000,
+  });
+
+  const { data: activeShift = null } = useQuery({
+    queryKey: ['cash-shift', 'active'],
+    queryFn: () => getActiveCashShiftAction(),
+    staleTime: 30 * 1000,
+  });
 
   return (
     <PosClient
       products={products}
       categories={categories}
-      storeName={user.tenantName}
-      cashierName={user.name}
-      businessType={user.businessType}
+      storeName={user?.tenantName || 'Toko Mie Graine'}
+      cashierName={user?.name || 'Kasir'}
+      businessType={user?.businessType || 'fnb'}
       activeShift={activeShift}
     />
   );

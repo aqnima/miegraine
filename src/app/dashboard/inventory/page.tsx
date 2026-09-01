@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   getInventorySummaryAction,
   getStockMutationsAction,
@@ -9,30 +10,31 @@ import { getProductsAction } from '@/lib/actions/products';
 import { InventoryClientView } from './inventory-client-view';
 
 export default function InventoryPage() {
-  const [summary, setSummary] = useState<any>({
-    totalProducts: 0,
-    totalStockPieces: 0,
+  const { data: summary = {
     totalAssetValue: 0,
+    totalItemsCount: 0,
     lowStockCount: 0,
+  } } = useQuery({
+    queryKey: ['inventory', 'summary'],
+    queryFn: () => getInventorySummaryAction(),
+    staleTime: 60 * 1000,
   });
-  const [mutations, setMutations] = useState<any[]>([]);
-  const [lowStockProducts, setLowStockProducts] = useState<any[]>([]);
 
-  useEffect(() => {
-    Promise.all([
-      getInventorySummaryAction(),
-      getStockMutationsAction(),
-      getProductsAction(),
-    ])
-      .then(([s, m, p]) => {
-        if (s) setSummary(s);
-        if (m) setMutations(m);
-        if (p) {
-          setLowStockProducts(p.filter((item) => item.stock <= (item.minStockAlert || 5)));
-        }
-      })
-      .catch(() => {});
-  }, []);
+  const { data: mutations = [] } = useQuery({
+    queryKey: ['inventory', 'mutations'],
+    queryFn: () => getStockMutationsAction(),
+    staleTime: 60 * 1000,
+  });
+
+  const { data: products = [] } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => getProductsAction(),
+    staleTime: 60 * 1000,
+  });
+
+  const lowStockProducts = products.filter(
+    (item) => item.stock <= (item.minStockAlert || 5)
+  );
 
   return (
     <InventoryClientView

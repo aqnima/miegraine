@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   getDebtsSummaryAction,
   getCustomersWithDebtsAction,
@@ -8,38 +9,38 @@ import {
 import { DebtClientView } from './debt-client-view';
 
 export default function DebtsPage() {
-  const [summary, setSummary] = useState<any>({
-    totalOutstanding: 0,
-    debtorsCount: 0,
-    repaidThisMonth: 0,
+  const { data: user } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: async () => {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      return data.user;
+    },
+    staleTime: 5 * 60 * 1000,
   });
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [storeName, setStoreName] = useState('Toko Mie Graine');
 
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.user?.tenantName) setStoreName(data.user.tenantName);
-      })
-      .catch(() => {});
+  const { data: summary = {
+    totalActiveDebt: 0,
+    debtorsCount: 0,
+    overLimitCount: 0,
+    totalCustomers: 0,
+  } } = useQuery({
+    queryKey: ['debts', 'summary'],
+    queryFn: () => getDebtsSummaryAction(),
+    staleTime: 60 * 1000,
+  });
 
-    Promise.all([
-      getDebtsSummaryAction(),
-      getCustomersWithDebtsAction(),
-    ])
-      .then(([s, c]) => {
-        if (s) setSummary(s);
-        if (c) setCustomers(c);
-      })
-      .catch(() => {});
-  }, []);
+  const { data: customers = [] } = useQuery({
+    queryKey: ['debts', 'customers'],
+    queryFn: () => getCustomersWithDebtsAction(),
+    staleTime: 60 * 1000,
+  });
 
   return (
     <div className="max-w-6xl mx-auto">
       <DebtClientView
         initialCustomers={customers}
-        storeName={storeName}
+        storeName={user?.tenantName || 'Toko Mie Graine'}
         summary={summary}
       />
     </div>

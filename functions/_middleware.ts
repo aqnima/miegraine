@@ -7,7 +7,7 @@ const JWT_SECRET = new TextEncoder().encode(
 const SESSION_COOKIE_NAME = '__miegraine_session';
 
 export async function onRequest(context: any) {
-  const { request, next } = context;
+  const { request, next, env } = context;
   const url = new URL(request.url);
   const pathname = url.pathname;
 
@@ -91,6 +91,26 @@ export async function onRequest(context: any) {
         return Response.redirect(new URL('/dashboard', request.url).toString(), 302);
       }
     }
+  }
+
+  // 6. Handle RSC Flight Payloads for Seamless 0ms SPA Client Navigation
+  const isRSC = request.headers.get('RSC') === '1' || url.searchParams.has('_rsc');
+  if (isRSC && env && env.ASSETS) {
+    try {
+      let cleanPath = pathname.replace(/\/$/, '');
+      if (cleanPath === '') cleanPath = '/index';
+      const rscUrl = new URL(cleanPath + '.rsc', request.url);
+      const rscResponse = await env.ASSETS.fetch(rscUrl);
+      if (rscResponse && rscResponse.status === 200) {
+        const newHeaders = new Headers(rscResponse.headers);
+        newHeaders.set('Content-Type', 'text/x-component');
+        newHeaders.set('Cache-Control', 'private, no-cache, max-age=0, must-revalidate');
+        return new Response(rscResponse.body, {
+          status: 200,
+          headers: newHeaders,
+        });
+      }
+    } catch {}
   }
 
   const response = await next();
