@@ -1,0 +1,19 @@
+name = "miegraine"
+compatibility_date = "2026-08-29"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+# Cloudflare D1 Serverless SQLite Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "miegraine_production"
+database_id = "510e11b1-96e0-4dd5-a2c3-dc8932105016"
+
+# Cloudflare KV Storage Binding
+[[kv_namespaces]]
+binding = "CACHE_KV"
+id = "miegraine-kv-cache-id"
+
+[vars]
+ENVIRONMENT = "development"
+APP_NAME = "Miegraine"
