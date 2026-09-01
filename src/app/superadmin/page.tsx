@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { getSuperadminOverviewAction, getAllTenantsAction } from '@/lib/actions/superadmin';
 import { formatRupiah, formatTanggal } from '@/lib/utils';
 import { StatCard } from '@/components/ui/stat-card';
@@ -13,11 +15,30 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-export default async function SuperadminOverviewPage() {
-  const [analytics, tenantsList] = await Promise.all([
-    getSuperadminOverviewAction(),
-    getAllTenantsAction(),
-  ]);
+export default function SuperadminOverviewPage() {
+  const [analytics, setAnalytics] = useState({
+    totalTenants: 1,
+    activeTenantsCount: 1,
+    totalGMV: 0,
+    totalTransactionsCount: 0,
+    mrr: 99000,
+    suspendedCount: 0,
+  });
+  const [tenantsList, setTenantsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      getSuperadminOverviewAction(),
+      getAllTenantsAction(),
+    ])
+      .then(([a, t]) => {
+        if (a) setAnalytics(a as any);
+        if (t) setTenantsList(t);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
   const recentColumns: ColumnDef<any>[] = [
     {

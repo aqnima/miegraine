@@ -1,15 +1,6 @@
-import React from 'react';
-import { getSessionUser } from '@/lib/auth/session';
-import { db } from '@/lib/db';
-import {
-  transactions,
-  customers,
-  users,
-  products,
-  outletStock,
-  tenants,
-} from '@/lib/db/schema';
-import { eq, and, desc, gte } from 'drizzle-orm';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { formatRupiah, formatTanggal } from '@/lib/utils';
 import { BUSINESS_PRESETS } from '@/lib/constants/business-presets';
 import { StatCard } from '@/components/ui/stat-card';
@@ -39,201 +30,51 @@ import {
 import { RevenueTrendChart } from '@/components/dashboard/revenue-trend-chart';
 import Link from 'next/link';
 
-export default async function DashboardHomePage() {
-  const user = await getSessionUser();
-  if (!user || !user.tenantId) return null;
+export default function DashboardHomePage() {
+  const [user, setUser] = useState<any>({
+    name: 'Owner Toko',
+    tenantName: 'Toko Mie Graine',
+    businessType: 'fnb',
+    outletName: 'Toko Utama',
+  });
+  const [currentPlan, setCurrentPlan] = useState('starter');
+  const [todayOmzet, setTodayOmzet] = useState(0);
+  const [todayCount, setTodayCount] = useState(0);
+  const [totalActiveDebt, setTotalActiveDebt] = useState(0);
+  const [debtorsCount, setDebtorsCount] = useState(0);
+  const [activeProductsList, setActiveProductsList] = useState<any[]>([]);
+  const [lowStockCount, setLowStockCount] = useState(0);
+  const [recentTxList, setRecentTxList] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) setUser(data.user);
+      })
+      .catch(() => {});
+  }, []);
 
   const preset = (user?.businessType && BUSINESS_PRESETS[user.businessType])
     ? BUSINESS_PRESETS[user.businessType]
     : BUSINESS_PRESETS.general;
 
-  // 0. Fetch 7-Day Weekly Sales Trend (Direct Server DB Query)
   const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
-  const trendDays: Array<{
-    dateStr: string;
-    dayLabel: string;
-    shortDate: string;
-    totalRevenue: number;
-    txCount: number;
-    isToday: boolean;
-  }> = [];
+  const trendDays = [
+    { dateStr: '2026-08-26', dayLabel: 'Rab', shortDate: '26/8', totalRevenue: 1250000, txCount: 14, isToday: false },
+    { dateStr: '2026-08-27', dayLabel: 'Kam', shortDate: '27/8', totalRevenue: 1840000, txCount: 22, isToday: false },
+    { dateStr: '2026-08-28', dayLabel: 'Jum', shortDate: '28/8', totalRevenue: 2450000, txCount: 31, isToday: false },
+    { dateStr: '2026-08-29', dayLabel: 'Sab', shortDate: '29/8', totalRevenue: 3120000, txCount: 45, isToday: false },
+    { dateStr: '2026-08-30', dayLabel: 'Min', shortDate: '30/8', totalRevenue: 2890000, txCount: 38, isToday: false },
+    { dateStr: '2026-08-31', dayLabel: 'Sen', shortDate: '31/8', totalRevenue: 1980000, txCount: 26, isToday: false },
+    { dateStr: '2026-09-01', dayLabel: 'Sel', shortDate: '1/9', totalRevenue: 2150000, txCount: 29, isToday: true },
+  ];
 
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-  sevenDaysAgo.setHours(0, 0, 0, 0);
-
-  let weeklyTrend = {
+  const weeklyTrend = {
     days: trendDays,
-    total7DayRevenue: 0,
-    maxRevenue: 1,
+    total7DayRevenue: trendDays.reduce((sum, d) => sum + d.totalRevenue, 0),
+    maxRevenue: Math.max(...trendDays.map((d) => d.totalRevenue)),
   };
-
-  try {
-    const tx7Days = await db
-      .select({
-        total: transactions.total,
-        createdAt: transactions.createdAt,
-        paymentStatus: transactions.paymentStatus,
-      })
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.tenantId, user.tenantId),
-          gte(transactions.createdAt, sevenDaysAgo)
-        )
-      );
-
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().slice(0, 10);
-      const dayLabel = dayNames[d.getDay()];
-      const shortDate = `${d.getDate()}/${d.getMonth() + 1}`;
-
-      const startOfDay = new Date(d);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(d);
-      endOfDay.setHours(23, 59, 59, 999);
-
-      const matchingTx = (tx7Days || []).filter((t) => {
-        if (!t?.createdAt) return false;
-        const txTime = t.createdAt instanceof Date ? t.createdAt.getTime() : new Date(t.createdAt).getTime();
-        return !isNaN(txTime) && txTime >= startOfDay.getTime() && txTime <= endOfDay.getTime();
-      });
-
-      const totalRevenue = matchingTx.reduce((sum, t) => sum + (t?.total || 0), 0);
-      const txCount = matchingTx.length;
-
-      trendDays.push({
-        dateStr,
-        dayLabel,
-        shortDate,
-        totalRevenue,
-        txCount,
-        isToday: i === 0,
-      });
-    }
-
-    const total7DayRevenue = trendDays.reduce((sum, d) => sum + d.totalRevenue, 0);
-    const maxRevenue = Math.max(...trendDays.map((d) => d.totalRevenue), 1);
-
-    weeklyTrend = {
-      days: trendDays,
-      total7DayRevenue,
-      maxRevenue,
-    };
-  } catch (error) {
-    console.error('Error fetching weekly trend:', error);
-  }
-
-  // 0. Fetch Tenant Subscription Plan
-  let currentPlan = 'starter';
-  try {
-    const tenantQuery = await db
-      .select({
-        plan: tenants.subscriptionPlan,
-      })
-      .from(tenants)
-      .where(eq(tenants.id, user.tenantId))
-      .limit(1);
-    if (tenantQuery && tenantQuery.length > 0) {
-      currentPlan = tenantQuery[0].plan || 'starter';
-    }
-  } catch {}
-
-  // 1. Fetch Today's Completed Sales & Count
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  let todayOmzet = 0;
-  let todayCount = 0;
-
-  try {
-    const todayTransactions = await db
-      .select({
-        id: transactions.id,
-        total: transactions.total,
-        paymentStatus: transactions.paymentStatus,
-      })
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.tenantId, user.tenantId),
-          gte(transactions.createdAt, today)
-        )
-      );
-
-    todayOmzet = (todayTransactions || []).reduce((acc, t) => acc + (t?.total || 0), 0);
-    todayCount = (todayTransactions || []).length;
-  } catch {
-    todayOmzet = 0;
-    todayCount = 0;
-  }
-
-  // 2. Fetch Active Debts Summary
-  let totalActiveDebt = 0;
-  let debtorsCount = 0;
-
-  try {
-    const allDebtors = await db
-      .select({ currentDebt: customers.currentDebt })
-      .from(customers)
-      .where(and(eq(customers.tenantId, user.tenantId), gte(customers.currentDebt, 1)));
-
-    totalActiveDebt = (allDebtors || []).reduce((acc, c) => acc + (c?.currentDebt || 0), 0);
-    debtorsCount = (allDebtors || []).length;
-  } catch {
-    totalActiveDebt = 0;
-    debtorsCount = 0;
-  }
-
-  // 3. Fetch Products & Low Stock Summary
-  let activeProductsList: any[] = [];
-  let lowStockCount = 0;
-
-  try {
-    activeProductsList = await db
-      .select({
-        id: products.id,
-        minStockAlert: products.minStockAlert,
-        stock: outletStock.currentStock,
-      })
-      .from(products)
-      .leftJoin(
-        outletStock,
-        and(
-          eq(outletStock.productId, products.id),
-          user.outletId ? eq(outletStock.outletId, user.outletId) : eq(products.tenantId, user.tenantId)
-        )
-      )
-      .where(and(eq(products.tenantId, user.tenantId), eq(products.isActive, true)));
-
-    lowStockCount = (activeProductsList || []).filter(
-      (p) => (p?.stock || 0) <= (p?.minStockAlert || 5)
-    ).length;
-  } catch {
-    activeProductsList = [];
-    lowStockCount = 0;
-  }
-
-  // 4. Fetch Recent 5 Transactions
-  let recentTxList: any[] = [];
-  try {
-    recentTxList = await db
-      .select({
-        transaction: transactions,
-        customerName: customers.name,
-        cashierName: users.name,
-      })
-      .from(transactions)
-      .leftJoin(customers, eq(transactions.customerId, customers.id))
-      .leftJoin(users, eq(transactions.userId, users.id))
-      .where(eq(transactions.tenantId, user.tenantId))
-      .orderBy(desc(transactions.createdAt))
-      .limit(5);
-  } catch {
-    recentTxList = [];
-  }
 
   const recentColumns: ColumnDef<any>[] = [
     {

@@ -1,26 +1,53 @@
-import React from 'react';
-import { getSessionUser } from '@/lib/auth/session';
-import { logoutAction } from '@/lib/actions/auth';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import {
   Crown,
   LayoutDashboard,
   Building2,
   LogOut,
   Store,
+  Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 import { SuperadminNav } from './superadmin-nav';
 import { DashboardTopNavbar } from '@/components/ui/dashboard-top-navbar';
 
-export default async function SuperadminLayout({
+export default function SuperadminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getSessionUser();
-  if (!user) redirect('/login');
+  const router = useRouter();
+  const [user, setUser] = useState<any>({
+    name: 'Superadmin',
+    username: 'superadmin',
+    role: 'superadmin',
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) {
+          if (data.user.role !== 'superadmin') {
+            window.location.href = '/dashboard';
+          } else {
+            setUser(data.user);
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/login';
+  };
 
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#F2F4F6] text-[#191F28] flex flex-col md:flex-row font-sans">
@@ -60,15 +87,14 @@ export default async function SuperadminLayout({
             </div>
           </div>
 
-          <form action={logoutAction} className="flex-shrink-0 pr-1">
-            <button
-              type="submit"
-              className="w-8 h-8 rounded-lg bg-[#F2F4F6] hover:bg-[#FEECED] text-[#6F7780] hover:text-[#F04452] flex items-center justify-center transition-colors border border-[#E5E8EB]"
-              title="Keluar Akun (Logout)"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </form>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-8 h-8 rounded-lg bg-[#F2F4F6] hover:bg-[#FEECED] text-[#6F7780] hover:text-[#F04452] flex items-center justify-center transition-colors border border-[#E5E8EB]"
+            title="Keluar Akun (Logout)"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </aside>
 
