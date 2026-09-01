@@ -34,7 +34,7 @@ function copyHtmlFiles(srcDir, targetDir) {
     if (item.isDirectory()) {
       if (item.name === '(auth)') {
         copyHtmlFiles(srcPath, targetDir);
-      } else if (!item.name.startsWith('_') && item.name !== 'page' && !item.name.endsWith('.svg')) {
+      } else if (!item.name.startsWith('_') && item.name !== 'page' && !item.name.endsWith('.svg') && !item.name.endsWith('.webmanifest')) {
         const subTarget = path.join(targetDir, item.name);
         fs.mkdirSync(subTarget, { recursive: true });
         copyHtmlFiles(srcPath, subTarget);
