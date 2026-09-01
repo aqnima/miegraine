@@ -42,7 +42,7 @@ export function DataTable<T>({
 
   return (
     <div
-      className={`bg-white rounded-xl border border-[#E5E8EB] shadow-xs overflow-hidden transition-all duration-200 animate-card-enter ${className}`}
+      className={`bg-white rounded-xl border border-[#E5E8EB] shadow-xs overflow-hidden transition-all duration-200 ${className}`}
     >
       <div className="overflow-x-auto">
         <table className="w-full text-xs">

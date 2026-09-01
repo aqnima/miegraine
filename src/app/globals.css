@@ -90,44 +90,7 @@ html {
 
 @keyframes pageSmoothIn {
   0% {
-    opacity: 0.85;
-    transform: translateY(3px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes authFadeIn {
-  0% {
     opacity: 0;
-    transform: scale(0.985) translateY(8px);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-@keyframes authSuccessPulse {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.97;
-    transform: scale(0.995);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes pageEnter {
-  0% {
-    opacity: 0.88;
     transform: translateY(4px);
   }
   100% {
@@ -137,8 +100,9 @@ html {
 }
 
 .animate-page-smooth {
-  animation: pageSmoothIn 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pageSmoothIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
   will-change: transform, opacity;
+  transform: translateZ(0);
 }
 
 .animate-auth-enter {

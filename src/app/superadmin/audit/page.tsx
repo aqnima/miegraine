@@ -1,19 +1,19 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { getSuperadminAuditLogsAction } from '@/lib/actions/superadmin';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { AuditClientView } from './audit-client-view';
 
 export default function SuperadminAuditPage() {
-  const [logs, setLogs] = useState<any[]>([]);
-
-  useEffect(() => {
-    getSuperadminAuditLogsAction()
-      .then((data) => {
-        if (data) setLogs(data);
-      })
-      .catch(() => {});
-  }, []);
+  const { data: logs = [] } = useQuery({
+    queryKey: ['superadmin', 'audit'],
+    queryFn: async () => {
+      const res = await fetch('/api/superadmin/audit');
+      if (!res.ok) throw new Error('Gagal memuat log aktivitas');
+      return res.json();
+    },
+    staleTime: 60 * 1000,
+  });
 
   return (
     <div className="max-w-6xl mx-auto">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LucideIcon, X } from 'lucide-react';
 
@@ -37,27 +37,27 @@ export function Modal({
 }: ModalProps) {
   const activeMaxWidth = (size || maxWidth || 'lg') as any;
   const [isMounted, setIsMounted] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isAnimatingIn, setIsAnimatingIn] = useState(false);
   const isMouseDownOnBackdrop = React.useRef(false);
 
-  // Sync mounting and smooth CSS transitions with isOpen prop
+  // Smooth Mount & Unmount with Apple/Toss spring transition
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
     if (isOpen) {
       setIsMounted(true);
-      // Wait for next animation frame to trigger smooth enter transition
-      const frame = requestAnimationFrame(() => {
-        setIsVisible(true);
+      // Double rAF ensures DOM paint before transition class triggers
+      const rAF = requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIsAnimatingIn(true);
+        });
       });
-      return () => cancelAnimationFrame(frame);
+      return () => cancelAnimationFrame(rAF);
     } else if (isMounted) {
-      // Trigger smooth exit transition
-      setIsVisible(false);
-      // Unmount after exit transition completes (200ms)
+      setIsAnimatingIn(false);
       timer = setTimeout(() => {
         setIsMounted(false);
-      }, 200);
+      }, 220); // Sync with exit transition duration
     }
 
     return () => {
@@ -107,9 +107,9 @@ export function Modal({
 
   const modalContent = (
     <div
-      className={`fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden select-none transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-        isVisible
-          ? 'bg-black/50 backdrop-blur-[4px] opacity-100'
+      className={`fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-hidden select-none transition-all duration-200 ease-out ${
+        isAnimatingIn
+          ? 'bg-black/45 backdrop-blur-[6px] opacity-100'
           : 'bg-black/0 backdrop-blur-none opacity-0 pointer-events-none'
       }`}
       onMouseDown={(e) => {
@@ -122,10 +122,10 @@ export function Modal({
       }}
     >
       <div
-        className={`w-full ${maxWidthMap[activeMaxWidth] || 'max-w-lg'} bg-white rounded-t-xl sm:rounded-xl border border-[#E5E8EB] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[88vh] my-0 sm:my-auto relative z-10 select-text transform-gpu transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${
-          isVisible
+        className={`w-full ${maxWidthMap[activeMaxWidth] || 'max-w-lg'} bg-white rounded-t-2xl sm:rounded-2xl border border-[#E5E8EB] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[88vh] my-0 sm:my-auto relative z-10 select-text transform-gpu transition-all duration-220 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform ${
+          isAnimatingIn
             ? 'opacity-100 scale-100 translate-y-0'
-            : 'opacity-0 scale-[0.985] translate-y-2 sm:translate-y-1.5'
+            : 'opacity-0 scale-[0.96] translate-y-3 sm:translate-y-2 pointer-events-none'
         } ${className}`}
         role="dialog"
         aria-modal="true"
@@ -136,7 +136,7 @@ export function Modal({
           <div className="flex items-center space-x-2.5 min-w-0 pr-2">
             {Icon && (
               <div
-                className={`w-9 h-9 rounded-xl ${iconBg} ${iconColor} flex items-center justify-center font-bold flex-shrink-0`}
+                className={`w-9 h-9 rounded-xl ${iconBg} ${iconColor} flex items-center justify-center font-bold flex-shrink-0 shadow-2xs`}
               >
                 <Icon className="w-5 h-5" />
               </div>
@@ -154,7 +154,7 @@ export function Modal({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-[#F2F4F6] text-[#6F7780] hover:bg-[#E5E8EB] hover:text-[#191F28] flex items-center justify-center transition-colors flex-shrink-0 ml-2"
+            className="w-8 h-8 rounded-lg bg-[#F2F4F6] text-[#6F7780] hover:bg-[#E5E8EB] hover:text-[#191F28] active:scale-95 flex items-center justify-center transition-all flex-shrink-0 ml-2"
             aria-label="Tutup"
           >
             <X className="w-4 h-4" />

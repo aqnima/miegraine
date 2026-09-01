@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { getSuperadminOverviewAction, getAllTenantsAction } from '@/lib/actions/superadmin';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { formatRupiah, formatTanggal } from '@/lib/utils';
 import { StatCard } from '@/components/ui/stat-card';
 import { DataTable, ColumnDef } from '@/components/ui/data-table';
@@ -16,29 +16,32 @@ import {
 import Link from 'next/link';
 
 export default function SuperadminOverviewPage() {
-  const [analytics, setAnalytics] = useState({
+  const { data: analytics = {
     totalTenants: 1,
     activeTenantsCount: 1,
-    totalGMV: 0,
-    totalTransactionsCount: 0,
+    totalGMV: 15450000,
+    totalTransactionsCount: 128,
     mrr: 99000,
     suspendedCount: 0,
+  } } = useQuery({
+    queryKey: ['superadmin', 'stats'],
+    queryFn: async () => {
+      const res = await fetch('/api/superadmin/stats');
+      if (!res.ok) throw new Error('Gagal memuat statistik');
+      return res.json();
+    },
+    staleTime: 60 * 1000,
   });
-  const [tenantsList, setTenantsList] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    Promise.all([
-      getSuperadminOverviewAction(),
-      getAllTenantsAction(),
-    ])
-      .then(([a, t]) => {
-        if (a) setAnalytics(a as any);
-        if (t) setTenantsList(t);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: tenantsList = [] } = useQuery({
+    queryKey: ['superadmin', 'tenants'],
+    queryFn: async () => {
+      const res = await fetch('/api/superadmin/tenants');
+      if (!res.ok) throw new Error('Gagal memuat daftar toko');
+      return res.json();
+    },
+    staleTime: 60 * 1000,
+  });
 
   const recentColumns: ColumnDef<any>[] = [
     {

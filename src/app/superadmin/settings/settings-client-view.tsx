@@ -66,9 +66,15 @@ export function SettingsClientView({
     setSavingSection(sectionKey);
 
     try {
-      await updateSuperadminSettingsAction(settings);
+      const res = await fetch('/api/superadmin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal menyimpan pengaturan.');
+
       toast.success(successTitle, successMessage);
-      router.refresh();
     } catch (err: any) {
       toast.error('Gagal Menyimpan', err.message || 'Terjadi kesalahan sistem.');
     } finally {

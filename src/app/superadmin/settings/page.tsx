@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { getSuperadminSettingsAction } from '@/lib/actions/superadmin';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { SettingsClientView } from './settings-client-view';
 
 export default function SuperadminSettingsPage() {
-  const [settings, setSettings] = useState<any>({
+  const { data: settings = {
     starterPrice: 99000,
     proPrice: 199000,
     enterprisePrice: 499000,
@@ -14,6 +14,14 @@ export default function SuperadminSettingsPage() {
     supportEmail: 'support@miegraine.id',
     broadcastBanner: '',
     isBroadcastActive: false,
+  } } = useQuery({
+    queryKey: ['superadmin', 'settings'],
+    queryFn: async () => {
+      const res = await fetch('/api/superadmin/settings');
+      if (!res.ok) throw new Error('Gagal memuat pengaturan');
+      return res.json();
+    },
+    staleTime: 60 * 1000,
   });
 
   const systemInfo = {
@@ -25,14 +33,6 @@ export default function SuperadminSettingsPage() {
     authSecurity: 'Jose JWT v5 (Stateless Multi-Tenant Enforced)',
     environment: 'Cloudflare Pages Production',
   };
-
-  useEffect(() => {
-    getSuperadminSettingsAction()
-      .then((data) => {
-        if (data) setSettings(data);
-      })
-      .catch(() => {});
-  }, []);
 
   return (
     <div className="max-w-6xl mx-auto">

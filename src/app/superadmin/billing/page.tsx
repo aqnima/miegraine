@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getSuperadminBillingAction } from '@/lib/actions/superadmin';
 import { BillingClientView } from './billing-client-view';
 
 export default function SuperadminBillingPage() {
@@ -14,7 +13,11 @@ export default function SuperadminBillingPage() {
     activeCount: 0,
   } } = useQuery({
     queryKey: ['superadmin', 'billing'],
-    queryFn: () => getSuperadminBillingAction(),
+    queryFn: async () => {
+      const res = await fetch('/api/superadmin/billing');
+      if (!res.ok) throw new Error('Gagal memuat billing');
+      return res.json();
+    },
     staleTime: 60 * 1000,
   });
 

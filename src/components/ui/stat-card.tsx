@@ -27,7 +27,7 @@ export function StatCard({
 }: StatCardProps) {
   return (
     <div
-      className={`group bg-white p-5 rounded-xl border border-[#E5E8EB] shadow-xs flex flex-col justify-between transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-[#3182F6]/30 animate-card-enter select-none ${className}`}
+      className={`group bg-white p-5 rounded-xl border border-[#E5E8EB] shadow-xs flex flex-col justify-between transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-[#3182F6]/30 select-none ${className}`}
     >
       <div>
         <div className="flex items-center justify-between text-[#6F7780] mb-2.5">
