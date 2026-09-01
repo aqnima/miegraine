@@ -76,7 +76,7 @@ export function InventoryReportClientView({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <StatCard
           title="Total Jenis SKU Produk"
-          value={`${valuation.totalProductsCount} Produk`}
+          value={`${valuation?.totalProductsCount || 0} Produk`}
           icon={Package}
           iconColor="text-[#3182F6]"
           subtitle="Katalog master produk aktif"
@@ -84,7 +84,7 @@ export function InventoryReportClientView({
 
         <StatCard
           title="Total Fisik Barang di Rak"
-          value={`${valuation.totalStockQty.toLocaleString('id-ID')} Unit`}
+          value={`${(valuation?.totalStockQty || 0).toLocaleString('id-ID')} Unit`}
           icon={Layers}
           iconColor="text-[#FE9800]"
           subtitle="Jumlah seluruh stok di cabang"
@@ -92,7 +92,7 @@ export function InventoryReportClientView({
 
         <StatCard
           title="Total Nilai Modal Aset (HPP)"
-          value={formatRupiah(valuation.totalAssetCostValue)}
+          value={formatRupiah(valuation?.totalAssetCostValue || 0)}
           icon={DollarSign}
           iconColor="text-[#03B26C]"
           valueColor="text-[#03B26C]"

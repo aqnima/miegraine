@@ -1,21 +1,38 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { getInventoryValuationAction } from '@/lib/actions/reports';
-import { getSessionUser } from '@/lib/auth/session';
 import { InventoryReportClientView } from './inventory-report-client-view';
-import { redirect } from 'next/navigation';
 
-export default async function InventoryReportPage() {
-  const user = await getSessionUser();
-  if (!user) redirect('/login');
-  if (user.role === 'cashier') redirect('/dashboard');
+export default function InventoryReportPage() {
+  const [valuation, setValuation] = useState<any>({
+    totalProductsCount: 0,
+    totalStockQty: 0,
+    totalAssetCostValue: 0,
+    items: [],
+  });
+  const [tenantName, setTenantName] = useState('Toko Mie Graine');
 
-  const valuation = await getInventoryValuationAction();
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user?.tenantName) setTenantName(data.user.tenantName);
+      })
+      .catch(() => {});
+
+    getInventoryValuationAction()
+      .then((data) => {
+        if (data) setValuation(data);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       <InventoryReportClientView
         valuation={valuation}
-        tenantName={user.tenantName || 'Toko'}
+        tenantName={tenantName}
       />
     </div>
   );

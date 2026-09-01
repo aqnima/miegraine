@@ -1,39 +1,38 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import {
   getInventorySummaryAction,
   getStockMutationsAction,
 } from '@/lib/actions/inventory';
 import { getProductsAction } from '@/lib/actions/products';
-import { getSessionUser } from '@/lib/auth/session';
-import { formatRupiah, formatTanggal } from '@/lib/utils';
-import {
-  Boxes,
-  Truck,
-  ClipboardCheck,
-  AlertTriangle,
-  ArrowUpRight,
-  TrendingDown,
-  DollarSign,
-  Package,
-  Layers,
-} from 'lucide-react';
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { InventoryClientView } from './inventory-client-view';
 
-export default async function InventoryPage() {
-  const user = await getSessionUser();
-  if (!user) redirect('/login');
+export default function InventoryPage() {
+  const [summary, setSummary] = useState<any>({
+    totalProducts: 0,
+    totalStockPieces: 0,
+    totalAssetValue: 0,
+    lowStockCount: 0,
+  });
+  const [mutations, setMutations] = useState<any[]>([]);
+  const [lowStockProducts, setLowStockProducts] = useState<any[]>([]);
 
-  const [summary, mutations, products] = await Promise.all([
-    getInventorySummaryAction(),
-    getStockMutationsAction(),
-    getProductsAction(),
-  ]);
-
-  const lowStockProducts = products.filter(
-    (p) => p.stock <= (p.minStockAlert || 5)
-  );
+  useEffect(() => {
+    Promise.all([
+      getInventorySummaryAction(),
+      getStockMutationsAction(),
+      getProductsAction(),
+    ])
+      .then(([s, m, p]) => {
+        if (s) setSummary(s);
+        if (m) setMutations(m);
+        if (p) {
+          setLowStockProducts(p.filter((item) => item.stock <= (item.minStockAlert || 5)));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <InventoryClientView

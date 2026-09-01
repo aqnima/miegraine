@@ -53,7 +53,7 @@ export function BillingClientView({ data }: BillingClientViewProps) {
   const router = useRouter();
   const toast = useToast();
 
-  const filtered = data.tenants.filter((t) => {
+  const filtered = (data?.tenants || []).filter((t: any) => {
     const matchSearch =
       t.name.toLowerCase().includes(search.toLowerCase()) ||
       t.ownerName.toLowerCase().includes(search.toLowerCase()) ||

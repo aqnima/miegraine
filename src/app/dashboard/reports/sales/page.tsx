@@ -1,35 +1,37 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { getSalesReportBreakdownAction } from '@/lib/actions/reports';
-import { getSessionUser } from '@/lib/auth/session';
 import { SalesReportClientView } from './sales-report-client-view';
-import { redirect } from 'next/navigation';
 
-export default async function SalesReportPage() {
-  const user = await getSessionUser();
-  if (!user) redirect('/login');
-  if (user.role === 'cashier') redirect('/dashboard');
-
-  let salesBreakdown: {
-    byPayment: { paymentMethod: string; totalAmount: number; count: number }[];
-    byCashier: { userId: string; userName: string; totalAmount: number; count: number }[];
-    transactionsList: Awaited<ReturnType<typeof getSalesReportBreakdownAction>>['transactionsList'];
-  } = {
+export default function SalesReportPage() {
+  const [salesBreakdown, setSalesBreakdown] = useState<any>({
     byPayment: [],
     byCashier: [],
     transactionsList: [],
-  };
+  });
+  const [tenantName, setTenantName] = useState('Toko Mie Graine');
 
-  try {
-    salesBreakdown = await getSalesReportBreakdownAction();
-  } catch (err) {
-    console.error('Error fetching sales breakdown in page:', err);
-  }
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user?.tenantName) setTenantName(data.user.tenantName);
+      })
+      .catch(() => {});
+
+    getSalesReportBreakdownAction()
+      .then((data) => {
+        if (data) setSalesBreakdown(data);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
       <SalesReportClientView
         salesBreakdown={salesBreakdown}
-        tenantName={user.tenantName || 'Toko'}
+        tenantName={tenantName}
       />
     </div>
   );

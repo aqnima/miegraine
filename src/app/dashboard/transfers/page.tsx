@@ -1,22 +1,36 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { getStockTransfersAction } from '@/lib/actions/stock-transfers';
-import { getSessionUser } from '@/lib/auth/session';
-import { db } from '@/lib/db';
-import { outlets, products } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import { redirect } from 'next/navigation';
+import { getProductsAction } from '@/lib/actions/products';
 import { TransfersClientView } from './transfers-client-view';
 
-export default async function StockTransfersPage() {
-  const user = await getSessionUser();
-  if (!user) redirect('/login');
-  if (user.role === 'cashier') redirect('/dashboard');
-
-  const [transfers, allOutlets, allProducts] = await Promise.all([
-    getStockTransfersAction(),
-    db.select().from(outlets).where(eq(outlets.tenantId, user.tenantId)),
-    db.select().from(products).where(eq(products.tenantId, user.tenantId)),
+export default function StockTransfersPage() {
+  const [transfers, setTransfers] = useState<any[]>([]);
+  const [allOutlets, setAllOutlets] = useState<any[]>([
+    { id: 'main', name: 'Toko Utama' },
   ]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [currentOutletId, setCurrentOutletId] = useState('main');
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user?.outletId) setCurrentOutletId(data.user.outletId);
+      })
+      .catch(() => {});
+
+    Promise.all([
+      getStockTransfersAction(),
+      getProductsAction(),
+    ])
+      .then(([t, p]) => {
+        if (t) setTransfers(t);
+        if (p) setAllProducts(p);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -24,7 +38,7 @@ export default async function StockTransfersPage() {
         transfers={transfers}
         outlets={allOutlets}
         products={allProducts}
-        currentOutletId={user.outletId || ''}
+        currentOutletId={currentOutletId}
       />
     </div>
   );

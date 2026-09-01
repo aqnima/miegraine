@@ -1,19 +1,40 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { getProductsAction, getCategoriesAction } from '@/lib/actions/products';
 import { getActiveCashShiftAction } from '@/lib/actions/reports';
-import { getSessionUser } from '@/lib/auth/session';
 import { PosClient } from './pos-client';
-import { redirect } from 'next/navigation';
 
-export default async function PosPage() {
-  const user = await getSessionUser();
-  if (!user) redirect('/login');
+export default function PosPage() {
+  const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [activeShift, setActiveShift] = useState<any>(null);
+  const [user, setUser] = useState<any>({
+    tenantName: 'Toko Mie Graine',
+    name: 'Kasir',
+    businessType: 'fnb',
+  });
 
-  const [products, categories, activeShift] = await Promise.all([
-    getProductsAction(),
-    getCategoriesAction(),
-    getActiveCashShiftAction(),
-  ]);
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) setUser(data.user);
+      })
+      .catch(() => {});
+
+    Promise.all([
+      getProductsAction(),
+      getCategoriesAction(),
+      getActiveCashShiftAction(),
+    ])
+      .then(([p, c, s]) => {
+        if (p) setProducts(p);
+        if (c) setCategories(c);
+        if (s) setActiveShift(s);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <PosClient

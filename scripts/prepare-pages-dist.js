@@ -57,25 +57,32 @@ function copyHtmlFiles(srcDir, targetDir) {
 
 copyHtmlFiles(path.join(nextDir, 'server', 'app'), distDir);
 
-// 5. Ensure fallback index.html in every route directory for SPA client routing
-const rootHtmlPath = path.join(distDir, 'index.html');
-if (fs.existsSync(rootHtmlPath)) {
-  const rootHtml = fs.readFileSync(rootHtmlPath, 'utf8');
-  function ensureIndexHtml(dir) {
-    if (!fs.existsSync(dir)) return;
-    const items = fs.readdirSync(dir, { withFileTypes: true });
-    const hasHtml = items.some((it) => it.isFile() && it.name === 'index.html');
-    if (!hasHtml) {
-      fs.writeFileSync(path.join(dir, 'index.html'), rootHtml);
-    }
-    for (const item of items) {
-      if (item.isDirectory() && !item.name.startsWith('_') && item.name !== 'icons') {
-        ensureIndexHtml(path.join(dir, item.name));
-      }
+// 5. Ensure fallback index.html for SPA client routing
+const dashboardHtmlPath = path.join(distDir, 'dashboard', 'index.html');
+const superadminHtmlPath = path.join(distDir, 'superadmin', 'index.html');
+
+function ensureSectionFallback(dir, fallbackHtml) {
+  if (!fs.existsSync(dir)) return;
+  const items = fs.readdirSync(dir, { withFileTypes: true });
+  const hasHtml = items.some((it) => it.isFile() && it.name === 'index.html');
+  if (!hasHtml) {
+    fs.writeFileSync(path.join(dir, 'index.html'), fallbackHtml);
+  }
+  for (const item of items) {
+    if (item.isDirectory() && !item.name.startsWith('_')) {
+      ensureSectionFallback(path.join(dir, item.name), fallbackHtml);
     }
   }
-  ensureIndexHtml(path.join(distDir, 'dashboard'));
-  ensureIndexHtml(path.join(distDir, 'superadmin'));
+}
+
+if (fs.existsSync(dashboardHtmlPath)) {
+  const dashboardHtml = fs.readFileSync(dashboardHtmlPath, 'utf8');
+  ensureSectionFallback(path.join(distDir, 'dashboard'), dashboardHtml);
+}
+
+if (fs.existsSync(superadminHtmlPath)) {
+  const superadminHtml = fs.readFileSync(superadminHtmlPath, 'utf8');
+  ensureSectionFallback(path.join(distDir, 'superadmin'), superadminHtml);
 }
 
 console.log('✅ Cloudflare Pages dist package prepared successfully at dist/');

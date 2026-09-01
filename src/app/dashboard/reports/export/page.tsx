@@ -1,23 +1,39 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import {
   getProfitLossSummaryAction,
   getSalesReportBreakdownAction,
   getInventoryValuationAction,
 } from '@/lib/actions/reports';
-import { getSessionUser } from '@/lib/auth/session';
 import { ExportReportClientView } from './export-report-client-view';
-import { redirect } from 'next/navigation';
 
-export default async function ExportReportPage() {
-  const user = await getSessionUser();
-  if (!user) redirect('/login');
-  if (user.role === 'cashier') redirect('/dashboard');
+export default function ExportReportPage() {
+  const [summary, setSummary] = useState<any>(null);
+  const [salesBreakdown, setSalesBreakdown] = useState<any>(null);
+  const [inventoryValuation, setInventoryValuation] = useState<any>(null);
+  const [tenantName, setTenantName] = useState('Toko Mie Graine');
 
-  const [summary, salesBreakdown, inventoryValuation] = await Promise.all([
-    getProfitLossSummaryAction(),
-    getSalesReportBreakdownAction(),
-    getInventoryValuationAction(),
-  ]);
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user?.tenantName) setTenantName(data.user.tenantName);
+      })
+      .catch(() => {});
+
+    Promise.all([
+      getProfitLossSummaryAction(),
+      getSalesReportBreakdownAction(),
+      getInventoryValuationAction(),
+    ])
+      .then(([s, sb, iv]) => {
+        if (s) setSummary(s);
+        if (sb) setSalesBreakdown(sb);
+        if (iv) setInventoryValuation(iv);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
@@ -25,7 +41,7 @@ export default async function ExportReportPage() {
         summary={summary}
         salesBreakdown={salesBreakdown}
         inventoryValuation={inventoryValuation}
-        tenantName={user.tenantName || 'Toko'}
+        tenantName={tenantName}
       />
     </div>
   );

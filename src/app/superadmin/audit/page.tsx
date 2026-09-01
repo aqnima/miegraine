@@ -1,14 +1,19 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { getSuperadminAuditLogsAction } from '@/lib/actions/superadmin';
-import { getSessionUser } from '@/lib/auth/session';
 import { AuditClientView } from './audit-client-view';
-import { redirect } from 'next/navigation';
 
-export default async function SuperadminAuditPage() {
-  const user = await getSessionUser();
-  if (!user) redirect('/login');
+export default function SuperadminAuditPage() {
+  const [logs, setLogs] = useState<any[]>([]);
 
-  const logs = await getSuperadminAuditLogsAction();
+  useEffect(() => {
+    getSuperadminAuditLogsAction()
+      .then((data) => {
+        if (data) setLogs(data);
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="max-w-6xl mx-auto">
