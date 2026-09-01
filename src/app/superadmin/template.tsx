@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 
 export default function SuperadminTemplate({
@@ -7,5 +5,5 @@ export default function SuperadminTemplate({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="animate-page-enter min-h-full">{children}</div>;
+  return <div className="min-h-full">{children}</div>;
 }
