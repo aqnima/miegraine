@@ -4,8 +4,6 @@ import './globals.css';
 import { ToastProvider } from '@/components/ui/toast';
 import { QueryProvider } from '@/components/providers/query-provider';
 
-export const runtime = 'edge';
-
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
   display: 'swap',

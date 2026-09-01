@@ -29,14 +29,30 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const formData = new FormData(e.currentTarget);
-    const result = await loginAction(formData);
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, redirect: redirectPath }),
+      });
 
-    if (result.success && result.redirectTo) {
-      window.location.href = result.redirectTo;
-    } else {
-      setError(result.error || 'Gagal login. Periksa username dan password Anda.');
-      setLoading(false);
+      const result = await res.json();
+
+      if (result.success && result.redirectTo) {
+        window.location.href = result.redirectTo;
+      } else {
+        setError(result.error || 'Gagal login. Periksa username dan password Anda.');
+        setLoading(false);
+      }
+    } catch {
+      const formData = new FormData(e.currentTarget);
+      const result = await loginAction(formData);
+      if (result.success && result.redirectTo) {
+        window.location.href = result.redirectTo;
+      } else {
+        setError(result.error || 'Gagal login. Periksa username dan password Anda.');
+        setLoading(false);
+      }
     }
   };
 
